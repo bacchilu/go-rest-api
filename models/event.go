@@ -16,6 +16,8 @@ type Event struct {
 var events []Event = []Event{{ID: 1, Name: "Evento1", DateTime: time.Now()}, {ID: 2, Name: "Evento2", DateTime: time.Now()}}
 
 func (e Event) Save() {
+	e.ID = len(events) + 1
+	e.DateTime = time.Now()
 	events = append(events, e)
 }
 
