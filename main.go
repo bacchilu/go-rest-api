@@ -3,15 +3,21 @@ package main
 import (
 	"net/http"
 
+	"github.com/bacchilu/rest-api/db"
 	"github.com/bacchilu/rest-api/models"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	db.InitDB()
 	server := gin.Default()
 
 	server.GET("/events", func(context *gin.Context) {
-		context.JSON(http.StatusOK, models.GetAllEvents())
+		res, err := models.GetAllEvents()
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, map[string]string{"msg": "error"})
+		}
+		context.JSON(http.StatusOK, res)
 	})
 	server.POST("/events", func(context *gin.Context) {
 		event := models.Event{}

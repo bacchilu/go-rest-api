@@ -1,0 +1,9 @@
+POST http://localhost:8080/events
+content-type: application/json
+
+{
+    "name": "TEST",
+    "description": "XXX",
+    "location": "Life365 Italy",
+    "user_id": 123
+}
