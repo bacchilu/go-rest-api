@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/bacchilu/rest-api/db"
 	"github.com/bacchilu/rest-api/models"
@@ -16,9 +17,26 @@ func main() {
 		res, err := models.GetAllEvents()
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, map[string]string{"msg": "error"})
+			return
 		}
 		context.JSON(http.StatusOK, res)
 	})
+
+	server.GET("/events/:id", func(context *gin.Context) {
+		id, err := strconv.ParseInt(context.Param("id"), 10, 64)
+		if err != nil {
+			context.JSON(http.StatusBadRequest, map[string]string{"msg": "error"})
+			return
+		}
+
+		res, err := models.GetSingleEvent(id)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, map[string]string{"msg": "error"})
+			return
+		}
+		context.JSON(http.StatusOK, res)
+	})
+
 	server.POST("/events", func(context *gin.Context) {
 		event := models.Event{}
 		err := context.ShouldBindJSON(&event)

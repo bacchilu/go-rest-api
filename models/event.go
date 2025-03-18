@@ -32,8 +32,20 @@ func GetAllEvents() ([]Event, error) {
 
 	res := []Event{}
 	for _, row := range rows {
-		res = append(res, Event{ID: row.Id, Name: row.Name, Description: row.Description, Location: row.Location, DateTime: row.DateTime, UserID: row.UserId})
+		res = append(
+			res,
+			Event{ID: row.Id, Name: row.Name, Description: row.Description, Location: row.Location, DateTime: row.DateTime, UserID: row.UserId},
+		)
 	}
 
 	return res, nil
+}
+
+func GetSingleEvent(id int64) (Event, error) {
+	row, err := db.GetSingleEvent(id)
+	if err != nil {
+		return Event{}, err
+	}
+
+	return Event{ID: row.Id, Name: row.Name, Description: row.Description, Location: row.Location, DateTime: row.DateTime, UserID: row.UserId}, nil
 }
