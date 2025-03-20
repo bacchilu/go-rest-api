@@ -15,8 +15,6 @@ type Event struct {
 	UserID      int       `json:"user_id"`
 }
 
-var events []Event = []Event{{ID: 1, Name: "Evento1", DateTime: time.Now()}, {ID: 2, Name: "Evento2", DateTime: time.Now()}}
-
 func (e *Event) Save() error {
 	id, err := db.InsertEvent(e.Name, e.Description, e.Location, e.DateTime, e.UserID)
 	e.ID = id
