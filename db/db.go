@@ -2,16 +2,13 @@ package db
 
 import (
 	"database/sql"
-	"time"
 
+	"github.com/bacchilu/rest-api/interactor"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var DB *sql.DB
-
-func InitDB() {
-	var err error
-	DB, err = sql.Open("sqlite3", "api.db")
+func initDB() *sql.DB {
+	DB, err := sql.Open("sqlite3", "api.db")
 	if err != nil {
 		panic("Could not connect to database.")
 	}
@@ -19,10 +16,12 @@ func InitDB() {
 	DB.SetMaxOpenConns(10)
 	DB.SetMaxIdleConns(5)
 
-	createTables()
+	createTables(DB)
+
+	return DB
 }
 
-func createTables() {
+func createTables(DB *sql.DB) {
 	q := `
 		CREATE TABLE IF NOT EXISTS events (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,60 +39,62 @@ func createTables() {
 	}
 }
 
-func InsertEvent(name string, description string, location string, dateTime time.Time, userId int) (int64, error) {
+type sqliteEventRepository struct {
+	db *sql.DB
+}
+
+func NewSQLiteEventRepository() interactor.DataGateway {
+	db := initDB()
+	return sqliteEventRepository{db: db}
+}
+
+func (r sqliteEventRepository) Create(event interactor.Event) (interactor.Event, error) {
 	query := `
 		INSERT INTO events (name, description, location, dateTime, userId)
 		VALUES (?, ?, ?, ?, ?)
 	`
-	stmt, err := DB.Prepare(query)
+	stmt, err := r.db.Prepare(query)
 	if err != nil {
-		return 0, err
+		return interactor.Event{}, err
 	}
 	defer stmt.Close()
 
-	result, err := stmt.Exec(name, description, location, dateTime, userId)
+	result, err := stmt.Exec(event.Name, event.Description, event.Location, event.DateTime, event.UserID)
 	if err != nil {
-		return 0, err
+		return interactor.Event{}, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return 0, err
+		return interactor.Event{}, err
 	}
 
-	return id, nil
+	event.ID = id
+	return event, nil
 }
 
-type Row struct {
-	Id                          int64
-	Name, Description, Location string
-	DateTime                    time.Time
-	UserId                      int
+func (r sqliteEventRepository) GetByID(id int64) (interactor.Event, error) {
+	query := "SELECT id, name, description, location, dateTime, userId FROM events WHERE id = ?"
+	data := r.db.QueryRow(query, id)
+	event := interactor.Event{}
+	err := data.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.UserID)
+	return event, err
 }
 
-func GetAllEvents() ([]Row, error) {
+func (r sqliteEventRepository) List() ([]interactor.Event, error) {
 	query := "SELECT id, name, description, location, dateTime, userId FROM events"
-	rows, err := DB.Query(query)
+	rows, err := r.db.Query(query)
 	if err != nil {
-		return []Row{}, err
+		return []interactor.Event{}, err
 	}
 	defer rows.Close()
 
-	results := []Row{}
+	results := []interactor.Event{}
 	for rows.Next() {
-		row := Row{}
-		rows.Scan(&row.Id, &row.Name, &row.Description, &row.Location, &row.DateTime, &row.UserId)
-		results = append(results, row)
+		event := interactor.Event{}
+		rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.UserID)
+		results = append(results, event)
 	}
 
 	return results, nil
-}
-
-func GetSingleEvent(id int64) (Row, error) {
-	query := "SELECT id, name, description, location, dateTime, userId FROM events WHERE id = ?"
-	data := DB.QueryRow(query, id)
-	row := Row{}
-	err := data.Scan(&row.Id, &row.Name, &row.Description, &row.Location, &row.DateTime, &row.UserId)
-
-	return row, err
 }
