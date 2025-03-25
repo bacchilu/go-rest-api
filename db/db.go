@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/bacchilu/rest-api/interactor"
 	_ "github.com/mattn/go-sqlite3"
@@ -97,4 +98,27 @@ func (r sqliteEventRepository) List() ([]interactor.Event, error) {
 	}
 
 	return results, nil
+}
+
+func (r sqliteEventRepository) Update(event interactor.Event) error {
+	query := "UPDATE events SET name = ?, description = ?, location = ?, dateTime = ?, userId = ? WHERE id = ?"
+	stmt, err := r.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(event.Name, event.Description, event.Location, event.DateTime, event.UserID, event.ID)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return errors.New("event not found")
+	}
+
+	return nil
 }

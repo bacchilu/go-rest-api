@@ -4,6 +4,7 @@ type Application interface {
 	CreateEvent(Event) (Event, error)
 	GetEvent(int64) (Event, error)
 	ListEvents() ([]Event, error)
+	UpdateEvent(Event) error
 }
 
 type app struct {
@@ -24,4 +25,8 @@ func (a app) GetEvent(id int64) (Event, error) {
 
 func (a app) ListEvents() ([]Event, error) {
 	return a.store.List()
+}
+
+func (a app) UpdateEvent(event Event) error {
+	return a.store.Update(event)
 }
